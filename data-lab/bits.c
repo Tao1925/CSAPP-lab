@@ -2,7 +2,8 @@
  * CS:APP Data Lab 
  * 
  * <Please put your name and userid here>
- * 
+ * Name:Tao1925
+
  * bits.c - Source file with your solutions to the Lab.
  *          This is the file you will hand in to your instructor.
  *
@@ -143,7 +144,7 @@ NOTES:
  *   Rating: 1
  */
 int bitXor(int x, int y) {
-  return 2;
+  return ~(~x & ~y) & ~(x & y);
 }
 /* 
  * tmin - return minimum two's complement integer 
@@ -153,7 +154,7 @@ int bitXor(int x, int y) {
  */
 int tmin(void) {
 
-  return 2;
+  return (1 << 31);
 
 }
 //2
@@ -165,7 +166,7 @@ int tmin(void) {
  *   Rating: 1
  */
 int isTmax(int x) {
-  return 2;
+  return !(~(x + 1) ^ x)& !!(x + 1);
 }
 /* 
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
@@ -176,7 +177,10 @@ int isTmax(int x) {
  *   Rating: 2
  */
 int allOddBits(int x) {
-  return 2;
+  int a = 0xAA;
+  int b = a << 8 | a;
+  int c = b << 16 | b;
+  return !((x & c) ^ c);
 }
 /* 
  * negate - return -x 
@@ -186,7 +190,7 @@ int allOddBits(int x) {
  *   Rating: 2
  */
 int negate(int x) {
-  return 2;
+  return ~x + 1;
 }
 //3
 /* 
@@ -199,7 +203,9 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+  int a = !((x >> 4) ^ 0x3);
+  int b = !(((x + 0x6) >> 4) ^ 0x3);
+  return a & b;
 }
 /* 
  * conditional - same as x ? y : z 
@@ -209,7 +215,11 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+  int jud = !!x;
+  int temp = ~jud + 1;
+  // temp -> all zero if x is 0
+  //         all one if x != 0
+  return (temp & y) + (~temp & z);
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -219,7 +229,15 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) {
-  return 2;
+  // check if y - x >= 0
+  // judge the top bit to determine whether + or -
+  int x_status = x >> 31;
+  int y_status = y >> 31;
+  int check_1 = x_status & !y_status; // always  true
+  int check_2 = !x_status & y_status; // always false
+  int diff = y + (~x + 1);
+  int check_3 = diff >> 31;
+  return check_1 | (!check_2 & !check_3);
 }
 //4
 /* 
@@ -231,7 +249,7 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-  return 2;
+  return ((x | (~x + 1)) >> 31) + 1;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
@@ -246,7 +264,21 @@ int logicalNeg(int x) {
  *  Rating: 4
  */
 int howManyBits(int x) {
-  return 0;
+  int b16, b8, b4, b2, b1, b0;
+  int flag = x >> 31;
+  x = (flag & ~x)|(~flag & x);
+  b16 = !!(x >> 16) << 4;
+  x = x >> b16;
+  b8 = !!(x >> 8) << 3;
+  x = x >> b8;
+  b4 = !!(x >> 4) << 2;
+  x = x >> b4;
+  b2 = !!(x >> 2) << 1;
+  x = x >> b2;
+  b1 = !!(x >> 1);
+  x = x >> b1;
+  b0 = x;
+  return b16 + b8 + b4 + b2 + b1 + b0 + 1;
 }
 //float
 /* 
@@ -261,7 +293,21 @@ int howManyBits(int x) {
  *   Rating: 4
  */
 unsigned floatScale2(unsigned uf) {
-  return 2;
+  // IEEE 754 => 1->flag  8->exp  23->fraction
+  unsigned flag = uf >> 31;
+  unsigned exp = (uf & 0x7f800000) >> 23;
+  unsigned frac = (uf & 0x7fffff);
+  unsigned ans;
+  if (exp == 0xff){
+    ans = uf;
+  }else if (exp == 0){
+    frac = frac << 1;
+    ans = (flag << 31) | frac;
+  }else {
+    exp++;
+    ans = (flag << 31) | (exp << 23) | frac;
+  }
+  return ans;
 }
 /* 
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
@@ -276,7 +322,22 @@ unsigned floatScale2(unsigned uf) {
  *   Rating: 4
  */
 int floatFloat2Int(unsigned uf) {
-  return 2;
+  unsigned flag = uf >> 31;
+  unsigned exp = (uf & 0x7f800000) >> 23;
+  unsigned frac = (uf & 0x7fffff);
+  int E = exp - 127;
+  frac = frac | (1 << 23);
+  if (E < 0){
+    return 0;
+  }else if (E >= 31){
+    return 0x80000000;
+  }else if (E >= 23){
+    frac = frac << (E - 23);
+  }else {
+    frac = frac >> (23 - E);
+  }
+  if (flag > 0) return -frac;
+  return frac;
 }
 /* 
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
@@ -292,5 +353,9 @@ int floatFloat2Int(unsigned uf) {
  *   Rating: 4
  */
 unsigned floatPower2(int x) {
-    return 2;
+  int INF = 0xff << 23;
+  int exp = x + 127;
+  if (exp >= 255) return INF;
+  if (exp <= 0) return 0;
+  return exp << 23;
 }
